@@ -68,8 +68,7 @@ p5.prototype.registerMethod('init', function p5PlayInit() {
   var startDate = new Date();
   this._startTime = startDate.getTime();
 
-  // Temporary canvas for supporting tint operations from image elements;
-  // see p5.prototype.imageElement()
+  
   this._tempCanvas = document.createElement('canvas');
 });
 
@@ -752,15 +751,14 @@ p5.prototype.shape = function() {
   }
   // NOTE: only implemented for non-3D
   if (!this._renderer.isP3D) {
-    // TODO: call this._validateParameters, once it is working in p5.js and
-    // we understand if it can be used for var args functions like this
+    
     this._renderer.shape.apply(this._renderer, arguments);
   }
   return this;
 };
 
 p5.prototype.rgb = function(r, g, b, a) {
-  // convert a from 0 to 255 to 0 to 1
+  
   if (!a) {
     a = 1;
   }
@@ -890,7 +888,7 @@ p5.prototype.updateSprites = function(upd) {
 */
 p5.prototype.getSprites = function() {
 
-  //draw everything
+ 
   if(arguments.length===0)
   {
     return this.allSprites.toArray();
@@ -898,7 +896,7 @@ p5.prototype.getSprites = function() {
   else
   {
     var arr = [];
-    //for every tag
+  
     for(var j=0; j<arguments.length; j++)
     {
       for(var i = 0; i<this.allSprites.size(); i++)
@@ -923,7 +921,7 @@ p5.prototype.getSprites = function() {
 * @param {Group} [group] Group of Sprites to be displayed
 */
 p5.prototype.drawSprites = function(group) {
-  // If no group is provided, draw the allSprites group.
+ 
   group = group || this.allSprites;
 
   if (typeof group.draw !== 'function')
@@ -980,7 +978,7 @@ p5.prototype.animation = function(anim, x, y) {
   anim.draw(x, y);
 };
 
-//variable to detect instant presses
+
 defineLazyP5Property('_p5play', function() {
   return {
     keyStates: {},
@@ -1056,7 +1054,7 @@ p5.prototype._isKeyInState = function(key, state) {
     keyCode = key;
   }
 
-  //if undefined start checking it
+ 
   if(keyStates[keyCode]===undefined)
   {
     if(this.keyIsDown(keyCode))
@@ -1314,44 +1312,44 @@ p5.prototype._keyCodeFromAlias = function(alias) {
   return this.KEY[alias];
 };
 
-//pre draw: detect keyStates
+
 p5.prototype.readPresses = function() {
   var keyStates = this._p5play.keyStates;
   var mouseStates = this._p5play.mouseStates;
 
   for (var key in keyStates) {
-    if(this.keyIsDown(key)) //if is down
+    if(this.keyIsDown(key))
     {
-      if(keyStates[key] === KEY_IS_UP)//and was up
+      if(keyStates[key] === KEY_IS_UP)
         keyStates[key] = KEY_WENT_DOWN;
       else
-        keyStates[key] = KEY_IS_DOWN; //now is simply down
+        keyStates[key] = KEY_IS_DOWN; 
     }
-    else //if it's up
+    else 
     {
-      if(keyStates[key] === KEY_IS_DOWN)//and was up
+      if(keyStates[key] === KEY_IS_DOWN)
         keyStates[key] = KEY_WENT_UP;
       else
-        keyStates[key] = KEY_IS_UP; //now is simply down
+        keyStates[key] = KEY_IS_UP;
     }
   }
 
   //mouse
   for (var btn in mouseStates) {
 
-    if(this._mouseButtonIsPressed(btn)) //if is down
+    if(this._mouseButtonIsPressed(btn)) 
     {
-      if(mouseStates[btn] === KEY_IS_UP)//and was up
+      if(mouseStates[btn] === KEY_IS_UP)
         mouseStates[btn] = KEY_WENT_DOWN;
       else
-        mouseStates[btn] = KEY_IS_DOWN; //now is simply down
+        mouseStates[btn] = KEY_IS_DOWN;
     }
     else //if it's up
     {
-      if(mouseStates[btn] === KEY_IS_DOWN)//and was up
+      if(mouseStates[btn] === KEY_IS_DOWN)
         mouseStates[btn] = KEY_WENT_UP;
       else
-        mouseStates[btn] = KEY_IS_UP; //now is simply down
+        mouseStates[btn] = KEY_IS_UP;
     }
   }
 
@@ -1384,7 +1382,7 @@ p5.prototype.useQuadTree = function(use) {
     return false;
 };
 
-//the actual quadTree
+
 defineLazyP5Property('quadTree', function() {
   var quadTree = new Quadtree({
     x: 0,
