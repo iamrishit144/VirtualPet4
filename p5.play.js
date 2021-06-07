@@ -3225,9 +3225,7 @@ function Sprite(pInst, _x, _y, _w, _h) {
         others = pInst.quadTree.retrieveFromGroup(this, target);
       }
 
-      // If the quadtree is disabled -or- no sprites in this group are in the
-      // quadtree yet (because their default colliders haven't been created)
-      // we should just check all of them.
+    
       if (others.length === 0) {
         others = target;
       }
@@ -3257,7 +3255,7 @@ function Sprite(pInst, _x, _y, _w, _h) {
    * @return {boolean} true if a collision occurred
    */
   this._collideWithOne = function(type, other, callback) {
-    // Never collide with self
+   
     if (other === this || other.removed) {
       return false;
     }
@@ -3271,13 +3269,11 @@ function Sprite(pInst, _x, _y, _w, _h) {
     }
 
     if (!this.collider || !other.collider) {
-      // We were unable to create a collider for one of the sprites.
-      // This usually means its animation is not available yet; it will be soon.
-      // Don't collide for now.
+     
       return false;
     }
 
-    // Actually compute the overlap of the two colliders
+   
     var displacement = this._findDisplacement(other);
     if (displacement.x === 0 && displacement.y === 0) {
       // These sprites are not overlapping.
@@ -3303,9 +3299,7 @@ function Sprite(pInst, _x, _y, _w, _h) {
       this.collider.updateFromSprite(this);
     }
 
-    // Create special behaviors for certain collision types by temporarily
-    // overriding type and sprite properties.
-    // See another block near the end of this method that puts them back.
+   
     var originalType = type;
     var originalThisImmovable = this.immovable;
     var originalOtherImmovable = other.immovable;
@@ -3319,17 +3313,13 @@ function Sprite(pInst, _x, _y, _w, _h) {
       other.immovable = true;
     }
 
-    // If this is a 'bounce' collision, determine the new velocities for each sprite
+    
     if (type === 'bounce') {
-      // We are concerned only with velocities parallel to the collision normal,
-      // so project our sprite velocities onto that normal (captured in the
-      // displacement vector) and use these throughout the calculation
+      
       var thisInitialVelocity = p5.Vector.project(this.velocity, displacement);
       var otherInitialVelocity = p5.Vector.project(other.velocity, displacement);
 
-      // We only care about relative mass values, so if one of the sprites
-      // is considered 'immovable' treat the _other_ sprite's mass as zero
-      // to get the correct results.
+    
       var thisMass = this.mass;
       var otherMass = other.mass;
       if (this.immovable) {
@@ -3354,20 +3344,18 @@ function Sprite(pInst, _x, _y, _w, _h) {
         .mult(thisMass * coefficientOfRestitution)
         .add(initialMomentum)
         .div(combinedMass);
-      // Remove velocity before and apply velocity after to both members.
+      
       this.velocity.sub(thisInitialVelocity).add(thisFinalVelocity);
       other.velocity.sub(otherInitialVelocity).add(otherFinalVelocity);
     }
 
-    // Restore sprite properties now that velocity changes have been made.
-    // See another block before velocity changes that sets these up.
+    
     type = originalType;
     this.immovable = originalThisImmovable;
     other.immovable = originalOtherImmovable;
     other.restitution = originalOtherRestitution;
 
-    // Finally, for all collision types except 'isTouching', call the callback
-    // and record that collision occurred.
+    
     if (typeof callback === 'function' && type !== 'isTouching') {
       callback.call(this, this, other);
     }
@@ -3375,53 +3363,38 @@ function Sprite(pInst, _x, _y, _w, _h) {
   };
 
   this._findDisplacement = function(target) {
-    // Multisample if tunneling occurs:
-    // Do broad-phase detection. Check if the swept colliders overlap.
-    // In that case, test interpolations between their last positions and their
-    // current positions, and check for tunneling that way.
-    // Use multisampling to catch collisions we might otherwise miss.
+   
     if (this._doSweptCollidersOverlap(target)) {
-      // Figure out how many samples we should take.
-      // We want to limit this so that we don't take an absurd number of samples
-      // when objects end up at very high velocities (as happens sometimes in
-      // game engines).
+      
       var radiusOnVelocityAxis = Math.max(
         this.collider._getMinRadius(),
         target.collider._getMinRadius());
       var relativeVelocity = p5.Vector.sub(this.velocity, target.velocity).mag();
       var timestep = Math.max(0.015, radiusOnVelocityAxis / relativeVelocity);
-      // If the objects are small enough to benefit from multisampling at this
-      // relative velocity
+      
       if (timestep < 1) {
-        // Move sprites back to previous positions
-        // (We jump through some hoops here to avoid creating too many new
-        //  vector objects)
+
         var thisOriginalPosition = this.position.copy();
         var targetOriginalPosition = target.position.copy();
         this.position.set(this.previousPosition);
         target.position.set(target.previousPosition);
 
-        // Scale deltas down to timestep-deltas
+      
         var thisDelta = p5.Vector.sub(thisOriginalPosition, this.previousPosition).mult(timestep);
         var targetDelta = p5.Vector.sub(targetOriginalPosition, target.previousPosition).mult(timestep);
 
-        // Note: We don't have to check the original position, we can assume it's
-        // non-colliding (or it would have been handled on the last frame).
+        
         for (var i = timestep; i < 1; i += timestep) {
-          // Move the sprites forward by the sub-frame timestep
+          
           this.position.add(thisDelta);
           target.position.add(targetDelta);
           this.collider.updateFromSprite(this);
           target.collider.updateFromSprite(target);
 
-          // Check for collision at the new sub-frame position
+          
           var displacement = this.collider.collide(target.collider);
           if (displacement.x !== 0 || displacement.y !== 0) {
-            // These sprites are overlapping - we have a displacement, and a
-            // point-in-time for the collision.
-            // If either sprite is immovable, it should move back to its final
-            // position.  Otherwise, leave the sprites at their interpolated
-            // position when the collision occurred.
+            
             if (this.immovable) {
               this.position.set(thisOriginalPosition);
             }
@@ -3434,24 +3407,18 @@ function Sprite(pInst, _x, _y, _w, _h) {
           }
         }
 
-        // If we didn't find a displacement partway through,
-        // restore the sprites to their original positions and fall through
-        // to do the collision check at their final position.
+       
         this.position.set(thisOriginalPosition);
         target.position.set(targetOriginalPosition);
       }
     }
 
-    // Ensure the colliders are properly updated to match their parent
-    // sprites. Maybe someday we won't have to do this, but for now
-    // sprites aren't guaranteed to be internally consistent we do a
-    // last-minute update to make sure.
     this.collider.updateFromSprite(this);
     target.collider.updateFromSprite(target);
 
     return this.collider.collide(target.collider);
   };
-} //end Sprite class
+} 
 
 defineLazyP5Property('Sprite', boundConstructorFactory(Sprite));
 
@@ -3595,17 +3562,15 @@ function Camera(pInst, x, y, zoom) {
       this.active = false;
     }
   };
-} //end camera class
+} 
 
 defineLazyP5Property('Camera', boundConstructorFactory(Camera));
 
-//called pre draw by default
+
 function cameraPush() {
   var pInst = this;
   var camera = pInst.camera;
 
-  //awkward but necessary in order to have the camera at the center
-  //of the canvas by default
   if(!camera.init && camera.position.x === 0 && camera.position.y === 0)
     {
     camera.position.x=pInst.width/2;
@@ -3625,7 +3590,6 @@ function cameraPush() {
   }
 }
 
-//called postdraw by default
 function cameraPop() {
   var pInst = this;
 
@@ -3658,7 +3622,6 @@ function cameraPop() {
    */
 function Group() {
 
-  //basically extending the array
   var array = [];
 
   /**
@@ -3821,7 +3784,7 @@ function Group() {
   */
   array.draw = function() {
 
-    //sort by depth
+    
     this.sort(function(a, b) {
       return a.depth - b.depth;
     });
@@ -3832,7 +3795,6 @@ function Group() {
     }
   };
 
-  //internal use
   function virtEquals(obj, other) {
     if (obj === null || other === null) {
       return (obj === null) && (other === null);
@@ -4029,9 +3991,9 @@ function Group() {
   };
 
   array.callMethodEach = function(methodName) {
-    // Copy all arguments after the first parameter into methodArgs:
+   
     var methodArgs = Array.prototype.slice.call(arguments, 1);
-    // Use a copy of the array in case the method modifies the group
+    
     var elements = [].concat(this);
     for (var i = 0; i < elements.length; i++) {
       elements[i][methodName].apply(elements[i], methodArgs);
@@ -4215,20 +4177,17 @@ function Animation(pInst) {
   */
   this.frameChanged = false;
 
-  //is the collider defined manually or defined
-  //by the current frame size
+  
   this.imageCollider = false;
 
 
-  //sequence mode
+  
   if(frameArguments.length === 2 && typeof frameArguments[0] === 'string' && typeof frameArguments[1] === 'string')
   {
     var from = frameArguments[0];
     var to = frameArguments[1];
 
-    //print("sequence mode "+from+" -> "+to);
-
-    //make sure the extensions are fine
+    
     var ext1 = from.substring(from.length-4, from.length);
     if(ext1 !== '.png')
     {
@@ -4243,13 +4202,12 @@ function Animation(pInst) {
       to = -1;
     }
 
-    //extensions are fine
+    
     if(from !== -1 && to !== -1)
     {
       var digits1 = 0;
       var digits2 = 0;
 
-      //skip extension work backwards to find the numbers
       for (i = from.length-5; i >= 0; i--) {
         if(from.charAt(i) >= '0' && from.charAt(i) <= '9')
           digits1++;
@@ -4263,15 +4221,9 @@ function Animation(pInst) {
       var prefix1 = from.substring(0, from.length-(4+digits1));
       var prefix2 = to.substring(0, to.length-(4+digits2) );
 
-      // Our numbers likely have leading zeroes, which means that some
-      // browsers (e.g., PhantomJS) will interpret them as base 8 (octal)
-      // instead of decimal. To fix this, we'll explicity tell parseInt to
-      // use a base of 10 (decimal). For more details on this issue, see
-      // http://stackoverflow.com/a/8763427/2422398.
       var number1 = parseInt(from.substring(from.length-(4+digits1), from.length-4), 10);
       var number2 = parseInt(to.substring(to.length-(4+digits2), to.length-4), 10);
 
-      //swap if inverted
       if(number2<number1)
       {
         var t = number2;
@@ -4279,34 +4231,31 @@ function Animation(pInst) {
         number1 = t;
       }
 
-      //two different frames
       if(prefix1 !== prefix2 )
       {
-        //print("2 separate images");
         this.images.push(pInst.loadImage(from));
         this.images.push(pInst.loadImage(to));
       }
-      //same digits: case img0001, img0002
       else
       {
         var fileName;
         if(digits1 === digits2)
         {
 
-          //load all images
+          
           for (i = number1; i <= number2; i++) {
-            // Use nf() to number format 'i' into four digits
+           
             fileName = prefix1 + pInst.nf(i, digits1) + '.png';
             this.images.push(pInst.loadImage(fileName));
 
           }
 
         }
-        else //case: case img1, img2
+        else 
         {
-          //print("from "+prefix1+" "+number1 +" to "+number2);
+         
           for (i = number1; i <= number2; i++) {
-            // Use nf() to number format 'i' into four digits
+           
             fileName = prefix1 + i + '.png';
             this.images.push(pInst.loadImage(fileName));
 
@@ -4315,10 +4264,10 @@ function Animation(pInst) {
         }
       }
 
-    }//end no ext error
+    }
 
-  }//end sequence mode
-  // Sprite sheet mode
+  }
+
   else if (frameArguments.length === 1 && (frameArguments[0] instanceof SpriteSheet))
   {
     this.spriteSheet = frameArguments[0];
@@ -4338,9 +4287,9 @@ function Animation(pInst) {
   }
   else if(frameArguments.length !== 0)//arbitrary list of images
   {
-    //print("Animation arbitrary mode");
+    
     for (i = 0; i < frameArguments.length; i++) {
-      //print("loading "+fileNames[i]);
+     
       if(frameArguments[i] instanceof p5.Image)
         this.images.push(frameArguments[i]);
       else
@@ -4390,12 +4339,11 @@ function Animation(pInst) {
     if (this.visible)
     {
 
-      //only connection with the sprite class
-      //if animation is used independently draw and update are the sam
+      
       if(!this.isSpriteAnimation)
         this.update();
 
-      //this.currentImageMode = g.imageMode;
+     
       pInst.push();
       pInst.imageMode(CENTER);
 
@@ -4404,13 +4352,11 @@ function Animation(pInst) {
       var image = this.images[frame];
       var frame_info = this.spriteSheet && image;
 
-      // Adjust translation if we're dealing with a texture packed spritesheet
-      // (with sourceW, sourceH, sourceX, sourceY props on our images array)
+     
       if (frame_info) {
         var missingX = (frame_info.sourceW || frame_info.width) - frame_info.width;
         var missingY = (frame_info.sourceH || frame_info.height) - frame_info.height;
-        // If the count of missing (transparent) pixels is not equally balanced on
-        // the left vs. right or top vs. bottom, we adjust the translation:
+        
         xTranslate += ((frame_info.sourceX || 0) - missingX / 2);
         yTranslate += ((frame_info.sourceY || 0) - missingY / 2);
       }
@@ -4444,21 +4390,18 @@ function Animation(pInst) {
         }
       } else {
         pInst.print('Warning undefined frame '+frame);
-        //this.isActive = false;
       }
 
       pInst.pop();
     }
   };
 
-  //called by draw
   this.update = function() {
     cycles++;
     var previousFrame = frame;
     this.frameChanged = false;
 
 
-    //go to frame
     if(this.images.length === 1)
     {
       this.playing = false;
@@ -4467,12 +4410,10 @@ function Animation(pInst) {
 
     if ( this.playing && cycles%this.frameDelay === 0)
     {
-      //going to target frame up
       if(targetFrame>frame && targetFrame !== -1)
       {
         frame++;
       }
-      //going to taget frame down
       else if(targetFrame<frame && targetFrame !== -1)
       {
         frame--;
@@ -4483,14 +4424,12 @@ function Animation(pInst) {
       }
       else if (this.looping) //advance frame
       {
-        //if next frame is too high
         if (frame>=this.images.length-1)
           frame = 0;
         else
           frame++;
       } else
       {
-        //if next frame is too high
         if (frame<this.images.length-1)
           frame++;
         else
@@ -4590,8 +4529,6 @@ function Animation(pInst) {
       return;
     }
 
-    // targetFrame gets used by the update() method to decide what frame to
-    // select next.  When it's not being used it gets set to -1.
     targetFrame = toFrame;
 
     if(targetFrame !== frame) {
@@ -4689,10 +4626,10 @@ defineLazyP5Property('Animation', boundConstructorFactory(Animation));
  *    sprite sheets that don't have uniform rows and columns.
  *
  * @example
- *     // Method 1 - Using width, height for each frame and number of frames
+ *     
  *     explode_sprite_sheet = loadSpriteSheet('assets/explode_sprite_sheet.png', 171, 158, 11);
  *
- *     // Method 2 - Using an array of objects that define each frame
+ *     
  *     var player_frames = loadJSON('assets/tiles.json');
  *     player_sprite_sheet = loadSpriteSheet('assets/player_spritesheet.png', player_frames);
  *
@@ -4759,11 +4696,6 @@ function SpriteSheet(pInst) {
       this._generateSheetFrames();
     }
   } else {
-    // When the final argument is present (either the 3rd or the 5th), it indicates
-    // whether we should load the URL as an Image element (as opposed to the default
-    // behavior, which is to load it as a p5.Image). If that argument is a function,
-    // it will be called back once the load succeeds or fails. On success, the Image
-    // will be supplied as the only parameter. On failure, null will be supplied.
     var callback;
     if (shortArgs) {
       if (spriteSheetArgs[2]) {
@@ -4824,9 +4756,6 @@ function SpriteSheet(pInst) {
     var dWidth = width || frameWidth;
     var dHeight = height || frameHeight;
 
-    // Adjust how we draw if we're dealing with a texture packed spritesheet
-    // (in particular, we treat supplied width and height params as an intention
-    //  to scale versus the sourceSize [before packing])
     if (frameToDraw.spriteSourceSize && frameToDraw.sourceSize) {
       var frameSizeScaleX = frameWidth / frameToDraw.sourceSize.w;
       var frameSizeScaleY = frameHeight / frameToDraw.sourceSize.h;
@@ -4925,7 +4854,6 @@ function Quadtree( bounds, max_objects, max_levels, level ) {
 
 Quadtree.prototype.updateBounds = function() {
 
-  //find maximum area
   var objects = this.getAll();
   var x = 10000;
   var y = 10000;
@@ -4951,7 +4879,6 @@ Quadtree.prototype.updateBounds = function() {
     width:w,
     height:h
   };
-  //print(this.bounds);
 };
 
 /*
@@ -4965,7 +4892,6 @@ Quadtree.prototype.split = function() {
       x 			= Math.round( this.bounds.x ),
       y 			= Math.round( this.bounds.y );
 
-  //top right node
   this.nodes[0] = new Quadtree({
     x	: x + subWidth,
     y	: y,
@@ -4973,7 +4899,7 @@ Quadtree.prototype.split = function() {
     height	: subHeight
   }, this.max_objects, this.max_levels, nextLevel);
 
-  //top left node
+ 
   this.nodes[1] = new Quadtree({
     x	: x,
     y	: y,
@@ -4981,7 +4907,7 @@ Quadtree.prototype.split = function() {
     height	: subHeight
   }, this.max_objects, this.max_levels, nextLevel);
 
-  //bottom left node
+  
   this.nodes[2] = new Quadtree({
     x	: x,
     y	: y + subHeight,
@@ -5012,13 +4938,11 @@ Quadtree.prototype.getIndex = function( pRect ) {
         verticalMidpoint 	= this.bounds.x + (this.bounds.width / 2),
         horizontalMidpoint 	= this.bounds.y + (this.bounds.height / 2),
 
-        //pRect can completely fit within the top quadrants
+      
         topQuadrant = (colliderBounds.top < horizontalMidpoint && colliderBounds.bottom < horizontalMidpoint),
 
-        //pRect can completely fit within the bottom quadrants
         bottomQuadrant = (colliderBounds.top > horizontalMidpoint);
 
-    //pRect can completely fit within the left quadrants
     if (colliderBounds.left < verticalMidpoint && colliderBounds.right < verticalMidpoint ) {
       if( topQuadrant ) {
         index = 1;
@@ -5026,7 +4950,7 @@ Quadtree.prototype.getIndex = function( pRect ) {
         index = 2;
       }
 
-      //pRect can completely fit within the right quadrants
+      
     } else if( colliderBounds.left > verticalMidpoint ) {
       if( topQuadrant ) {
         index = 0;
@@ -5046,14 +4970,13 @@ Quadtree.prototype.getIndex = function( pRect ) {
 	 * objects to their corresponding subnodes.
 	 */
 Quadtree.prototype.insert = function( obj ) {
-  //avoid double insertion
+
   if(this.objects.indexOf(obj) === -1)
   {
 
     var i = 0,
         index;
 
-    //if we have subnodes ...
     if( typeof this.nodes[0] !== 'undefined' ) {
       index = this.getIndex( obj );
 
@@ -5067,12 +4990,10 @@ Quadtree.prototype.insert = function( obj ) {
 
     if( this.objects.length > this.max_objects && this.level < this.max_levels ) {
 
-      //split if we don't already have subnodes
       if( typeof this.nodes[0] === 'undefined' ) {
         this.split();
       }
 
-      //add all objects to there corresponding subnodes
       while( i < this.objects.length ) {
 
         index = this.getIndex( this.objects[i] );
@@ -5097,14 +5018,14 @@ Quadtree.prototype.retrieve = function( pRect ) {
   var index = this.getIndex( pRect ),
       returnObjects = this.objects;
 
-  //if we have subnodes ...
+ 
   if( typeof this.nodes[0] !== 'undefined' ) {
 
-    //if pRect fits into a subnode ..
+   
     if( index !== -1 ) {
       returnObjects = returnObjects.concat( this.nodes[index].retrieve( pRect ) );
 
-      //if pRect does not fit into a subnode, check it against all subnodes
+
     } else {
       for( var i=0; i < this.nodes.length; i=i+1 ) {
         returnObjects = returnObjects.concat( this.nodes[i].retrieve( pRect ) );
@@ -5149,7 +5070,6 @@ Quadtree.prototype.getObjectNode = function( obj ) {
 
   var index;
 
-  //if there are no subnodes, object must be here
   if( !this.nodes.length ) {
 
     return this;
@@ -5158,12 +5078,10 @@ Quadtree.prototype.getObjectNode = function( obj ) {
 
     index = this.getIndex( obj );
 
-    //if the object does not fit into a subnode, it must be here
     if( index === -1 ) {
 
       return this;
 
-      //if it fits into a subnode, continue deeper search there
     } else {
       var node = this.nodes[index].getObjectNode( obj );
       if( node ) return node;
@@ -5232,23 +5150,18 @@ function updateTree() {
   }
 }
 
-//keyboard input
+
 p5.prototype.registerMethod('pre', p5.prototype.readPresses);
 
-//automatic sprite update
 p5.prototype.registerMethod('pre', p5.prototype.updateSprites);
 
-//quadtree update
 p5.prototype.registerMethod('post', updateTree);
 
-//camera push and pop
 p5.prototype.registerMethod('pre', cameraPush);
 p5.prototype.registerMethod('post', cameraPop);
 
 p5.prototype.registerPreloadMethod('loadImageElement', p5.prototype);
 
-//deltaTime
-//p5.prototype.registerMethod('pre', updateDelta);
 
 /**
  * Log a warning message to the host console, using native `console.warn`
@@ -5362,7 +5275,6 @@ p5.prototype._warn = function(message) {
      */
     this.getsDimensionsFromSprite = false;
 
-    // Public getters/setters
     Object.defineProperties(this, {
 
       /**
@@ -5493,20 +5405,15 @@ p5.prototype._warn = function(message) {
    * @protected
    */
   p5.CollisionShape.prototype._onTransformChanged = function() {
-    // Recompute internal properties from transforms
 
-    // Rotation in local space
     this._rotation = this._localTransform.getRotation();
 
-    // Scale in local space
     this._scale = this._localTransform.getScale();
 
-    // Offset in local-space
     this._offset
       .set(0, 0)
       .transform(this._localTransform);
 
-    // Center in world-space
     this._center
       .set(this._offset.x, this._offset.y)
       .transform(this._parentTransform);
@@ -5523,28 +5430,14 @@ p5.prototype._warn = function(message) {
   p5.CollisionShape.prototype.collide = function(other) {
     var displacee = this, displacer = other;
 
-    // Compute a displacement vector using the Separating Axis Theorem
-    // (Valid only for convex shapes)
-    //
-    // If a line (axis) exists on which the two shapes' orthogonal projections
-    // do not overlap, then the shapes do not overlap.  If the shapes'
-    // projections do overlap on all candidate axes, the axis that had the
-    // smallest overlap gives us the smallest possible displacement.
-    //
-    // @see http://www.dyn4j.org/2010/01/sat/
+    
     var smallestOverlap = Infinity;
     var smallestOverlapAxis = null;
 
-    // We speed things up with an additional assumption that all collision
-    // shapes are centrosymmetric: Circles, ellipses, and rectangles
-    // are OK.  This lets us only compare the shapes' radii to the
-    // distance between their centers, even for non-circular shapes.
-    // Other convex shapes, (triangles, pentagons) will require more
-    // complex use of their projections' positions on the axis.
+    
     var deltaOfCenters = p5.Vector.sub(displacer.center, displacee.center);
 
-    // It turns out we only need to check a few axes, defined by the shapes
-    // being checked.  For a polygon, the normal of each face is a possible
+     // being checked.  For a polygon, the normal of each face is a possible
     // separating axis.
     var candidateAxes = p5.CollisionShape._getCandidateAxesForShapes(displacee, displacer);
     var axis, deltaOfCentersOnAxis, distanceOfCentersOnAxis;
@@ -6114,8 +6007,6 @@ p5.prototype._warn = function(message) {
    * @return {Array.<p5.Vector>}
    */
   p5.AxisAlignedBoundingBoxCollider.prototype._computeHalfDiagonals = function() {
-    // We transform the rectangle (which may scale and rotate it) then compute
-    // an axis-aligned bounding box _around_ it.
     var composedTransform = p5.Transform2D.mult(this._parentTransform, this._localTransform);
     var transformedDiagonals = [
       new p5.Vector(this._width / 2, -this._height / 2),
