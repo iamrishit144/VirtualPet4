@@ -3,7 +3,6 @@ class Food{
         this.foodStock = 10;
         this.lastfed;
         this.image = loadImage("images/Milk.png"); 
-        this.image = preloadImage("images/Milk.png");
     }
 
     getfoodStock(){
