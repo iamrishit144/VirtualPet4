@@ -4789,9 +4789,8 @@ function SpriteSheet(pInst) {
    * @return {SpriteSheet} A clone of the current SpriteSheet
    */
   this.clone = function() {
-    var myClone = new SpriteSheet(pInst); //empty
+    var myClone = new SpriteSheet(pInst);
 
-    // Deep clone the frames by value not reference
     for(var i = 0; i < this.frames.length; i++) {
       var frame = this.frames[i].frame;
       var cloneFrame = {
@@ -4806,7 +4805,6 @@ function SpriteSheet(pInst) {
       myClone.frames.push(cloneFrame);
     }
 
-    // clone other fields
     myClone.image = this.image;
     myClone.frame_width = this.frame_width;
     myClone.frame_height = this.frame_height;
@@ -4818,7 +4816,6 @@ function SpriteSheet(pInst) {
 
 defineLazyP5Property('SpriteSheet', boundConstructorFactory(SpriteSheet));
 
-//general constructor to be able to feed arguments as array
 function construct(constructor, args) {
   function F() {
     return constructor.apply(this, args);
@@ -4915,7 +4912,6 @@ Quadtree.prototype.split = function() {
     height	: subHeight
   }, this.max_objects, this.max_levels, nextLevel);
 
-  //bottom right node
   this.nodes[3] = new Quadtree({
     x	: x + subWidth,
     y	: y + subHeight,
@@ -5437,33 +5433,20 @@ p5.prototype._warn = function(message) {
     
     var deltaOfCenters = p5.Vector.sub(displacer.center, displacee.center);
 
-     // being checked.  For a polygon, the normal of each face is a possible
-    // separating axis.
     var candidateAxes = p5.CollisionShape._getCandidateAxesForShapes(displacee, displacer);
     var axis, deltaOfCentersOnAxis, distanceOfCentersOnAxis;
     for (var i = 0; i < candidateAxes.length; i++) {
       axis = candidateAxes[i];
 
-      // If distance between the shape's centers as projected onto the
-      // separating axis is larger than the combined radii of the shapes
-      // projected onto the axis, the shapes do not overlap on this axis.
       deltaOfCentersOnAxis = p5.Vector.project(deltaOfCenters, axis);
       distanceOfCentersOnAxis = deltaOfCentersOnAxis.mag();
       var r1 = displacee._getRadiusOnAxis(axis);
       var r2 = displacer._getRadiusOnAxis(axis);
       var overlap = r1 + r2 - distanceOfCentersOnAxis;
       if (overlap <= 0) {
-        // These shapes are separated along this axis.
-        // Early-out, returning a zero-vector displacement.
         return new p5.Vector();
       } else if (overlap < smallestOverlap) {
-        // This is the smallest overlap we've found so far - store some
-        // information about it, which we can use to give the smallest
-        // displacement when we're done.
         smallestOverlap = overlap;
-        // Normally use the delta of centers, which gives us direction along
-        // with an axis.  In the rare case that the centers exactly overlap,
-        // just use the original axis
         if (deltaOfCentersOnAxis.x === 0 && deltaOfCentersOnAxis.y === 0) {
           smallestOverlapAxis = axis;
         } else {
@@ -5472,8 +5455,6 @@ p5.prototype._warn = function(message) {
       }
     }
 
-    // If we make it here, we overlap on all possible axes and we
-    // can compute the smallest vector that will displace this out of other.
     return smallestOverlapAxis.copy().setMag(-smallestOverlap);
   };
 
@@ -5625,7 +5606,6 @@ p5.prototype._warn = function(message) {
    * @return {p5.PointCollider}
    */
   p5.PointCollider.createFromSprite = function(sprite, offset) {
-    // Create the collision shape at the transformed offset
     var shape = new p5.PointCollider(offset);
     shape.setParentTransform(sprite);
     return shape;
